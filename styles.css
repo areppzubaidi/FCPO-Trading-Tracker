@@ -1,0 +1,133 @@
+/* FCPO Journal — typographic, monochrome, no dependencies.
+   Same reasoning as the portfolio: numbers and words, not decoration. Green/red are the only
+   colours because P/L is the only thing that needs a second dimension. */
+
+:root {
+  --bg: #0d1117;
+  --panel: #141b23;
+  --line: #232d38;
+  --ink: #e6edf3;
+  --muted: #8b949e;
+  --good: #3fb950;
+  --bad: #f85149;
+  --accent: #58a6ff;
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  background: rgba(13, 17, 23, 0.92);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(8px);
+  flex-wrap: wrap;
+}
+
+.brand { display: flex; align-items: center; gap: 0.55rem; font-weight: 700; letter-spacing: 0.01em; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+
+.tabs { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.tab {
+  background: none; border: 1px solid transparent; color: var(--muted);
+  padding: 0.4rem 0.8rem; border-radius: 999px; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+}
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--ink); border-color: var(--line); background: var(--panel); }
+
+main { max-width: 1080px; margin: 0 auto; padding: 1.25rem; }
+.view { display: none; }
+.view.active { display: block; }
+
+.panel {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 1.1rem 1.2rem; margin-bottom: 1.1rem;
+}
+.panel h2 { font-size: 0.95rem; margin: 0 0 0.9rem; letter-spacing: 0.02em; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+
+.muted { color: var(--muted); font-size: 0.85rem; }
+.good { color: var(--good); }
+.bad { color: var(--bad); }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.7rem; margin-bottom: 1.1rem; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.85rem 0.95rem; }
+.kpi-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.kpi-value { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 0.25rem; }
+.kpi.good .kpi-value { color: var(--good); }
+.kpi.bad .kpi-value { color: var(--bad); }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+@media (max-width: 780px) { .grid-2 { grid-template-columns: 1fr; } }
+
+#curve { width: 100%; height: 220px; display: block; }
+#curve .axis { stroke: var(--line); stroke-width: 1; stroke-dasharray: 4 4; }
+#curve .line { fill: none; stroke-width: 2; }
+#curve .line.up { stroke: var(--good); }
+#curve .line.down { stroke: var(--bad); }
+#curve .area.up { fill: rgba(63, 185, 80, 0.12); }
+#curve .area.down { fill: rgba(248, 81, 73, 0.12); }
+
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 600; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line); }
+td { padding: 0.5rem; border-bottom: 1px solid rgba(35, 45, 56, 0.6); font-size: 0.88rem; }
+tbody tr:hover, table tr:hover { background: rgba(88, 166, 255, 0.04); }
+
+.mini td, .mini th { padding: 0.4rem 0.3rem; }
+.table-wrap { overflow-x: auto; }
+.blotter { min-width: 720px; }
+
+.side { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid var(--line); }
+.side.long { color: var(--good); border-color: rgba(63,185,80,0.4); }
+.side.short { color: var(--bad); border-color: rgba(248,81,73,0.4); }
+
+.tag { font-size: 0.75rem; color: var(--accent); }
+.del { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; line-height: 1; }
+.del:hover { color: var(--bad); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip {
+  display: inline-flex; flex-direction: column; gap: 0.1rem;
+  border: 1px solid var(--line); border-radius: 10px; padding: 0.5rem 0.7rem;
+  font-size: 0.82rem; font-weight: 600;
+}
+.chip.good { border-color: rgba(63,185,80,0.35); }
+.chip.bad { border-color: rgba(248,81,73,0.35); }
+.chip b { font-variant-numeric: tabular-nums; }
+.chip i { font-style: normal; font-weight: 400; font-size: 0.72rem; color: var(--muted); }
+
+.note { border-left: 2px solid var(--line); padding: 0.2rem 0 0.2rem 0.8rem; margin-bottom: 0.9rem; }
+.note-head { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.2rem; }
+.note p { margin: 0; font-size: 0.9rem; }
+
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.7rem; }
+.form label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.form .wide { grid-column: 1 / -1; }
+input, select {
+  background: #0d1117; border: 1px solid var(--line); color: var(--ink);
+  border-radius: 8px; padding: 0.5rem 0.6rem; font-size: 0.9rem; font-family: inherit; width: 100%;
+}
+input:focus, select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+button[type="submit"], .ghost, .danger, .file {
+  border-radius: 8px; padding: 0.55rem 0.9rem; font-size: 0.88rem; font-weight: 600;
+  cursor: pointer; font-family: inherit; border: 1px solid var(--line); background: none; color: var(--ink);
+}
+button[type="submit"] { background: var(--accent); border-color: var(--accent); color: #05121f; }
+.ghost:hover, .file:hover { border-color: var(--accent); }
+.danger { color: var(--bad); border-color: rgba(248,81,73,0.4); }
+.row { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+.file { display: inline-block; }
+
+.filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.filters input, .filters select { width: auto; }

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FCPO Journal</title>
+<meta name="description" content="A statement-powered FCPO futures trading journal: trade blotter, journal tags, brokerage and SST accounting, growth curve." />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="dot"></span>
+    <span>FCPO Journal</span>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-view="dashboard">Dashboard</button>
+    <button class="tab" data-view="blotter">Blotter</button>
+    <button class="tab" data-view="journal">Journal</button>
+    <button class="tab" data-view="import">Import</button>
+  </nav>
+</header>
+
+<main>
+  <!-- DASHBOARD -->
+  <section id="view-dashboard" class="view active">
+    <div class="kpis" id="kpis"></div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Account growth curve</h2>
+        <span class="muted" id="curve-note"></span>
+      </div>
+      <svg id="curve" viewBox="0 0 800 220" preserveAspectRatio="none" role="img" aria-label="Cumulative net P/L over closed trades"></svg>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h2>By side</h2>
+        <table class="mini" id="by-side"></table>
+      </div>
+      <div class="panel">
+        <h2>By month</h2>
+        <table class="mini" id="by-month"></table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Discipline</h2>
+      <div id="discipline" class="chips"></div>
+    </div>
+  </section>
+
+  <!-- BLOTTER -->
+  <section id="view-blotter" class="view">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Execution blotter</h2>
+        <div class="filters">
+          <select id="f-side">
+            <option value="">All sides</option>
+            <option value="long">Long</option>
+            <option value="short">Short</option>
+          </select>
+          <select id="f-result">
+            <option value="">All results</option>
+            <option value="win">Wins</option>
+            <option value="loss">Losses</option>
+          </select>
+          <input id="f-q" type="search" placeholder="Filter note or tag" />
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="blotter" id="blotter"></table>
+      </div>
+      <p class="muted" id="blotter-count"></p>
+    </div>
+  </section>
+
+  <!-- JOURNAL -->
+  <section id="view-journal" class="view">
+    <div class="panel">
+      <h2>Tags — what actually happened</h2>
+      <p class="muted">Pick the tags that describe the trade, not the outcome. The point is to find out which habits cost money.</p>
+      <div id="tag-stats" class="chips"></div>
+    </div>
+    <div class="panel">
+      <h2>Notes</h2>
+      <div id="notes"></div>
+    </div>
+  </section>
+
+  <!-- IMPORT -->
+  <section id="view-import" class="view">
+    <div class="panel">
+      <h2>Add a trade</h2>
+      <form id="trade-form" class="form">
+        <label>Date <input type="date" name="date" required /></label>
+        <label>Side
+          <select name="side"><option value="long">Long</option><option value="short">Short</option></select>
+        </label>
+        <label>Contract <input name="contract" value="FCPO" required /></label>
+        <label>Lots <input name="lots" type="number" step="1" min="1" value="1" required /></label>
+        <label>Entry <input name="entry" type="number" step="0.5" required /></label>
+        <label>Exit <input name="exit" type="number" step="0.5" required /></label>
+        <label>Commission (RM) <input name="commission" type="number" step="0.01" value="0" /></label>
+        <label>Tag <input name="tag" placeholder="VWAP Setup" /></label>
+        <label class="wide">Note <input name="note" placeholder="Why you took it, and what you'd do differently" /></label>
+        <button type="submit">Add trade</button>
+      </form>
+      <p class="muted">FCPO is RM25 per point per lot. Commission is charged per side by your broker; SST is 8% on commission and is calculated here automatically.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Data</h2>
+      <div class="row">
+        <button id="btn-export-json" class="ghost">Export JSON</button>
+        <button id="btn-export-csv" class="ghost">Export CSV</button>
+        <label class="file">Import JSON <input id="import-file" type="file" accept="application/json" hidden /></label>
+        <button id="btn-demo" class="ghost">Load demo trades</button>
+        <button id="btn-clear" class="danger">Clear all</button>
+      </div>
+      <p class="muted" id="data-note"></p>
+    </div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
