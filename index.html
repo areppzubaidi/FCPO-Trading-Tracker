@@ -26,6 +26,8 @@
   <section id="view-dashboard" class="view active">
     <div class="kpis" id="kpis"></div>
 
+    <div id="risk" class="risk" hidden></div>
+
     <div class="panel">
       <div class="panel-head">
         <h2>Account growth curve</h2>
@@ -112,6 +114,22 @@
     </div>
 
     <div class="panel">
+      <h2>Paste from a statement</h2>
+      <p class="muted">
+        Select the trade rows in your broker statement (or export CSV from the portal) and paste them here.
+        With a header row, columns are matched by name; without one, the order is
+        <b>date, side, lots, entry, exit, commission</b>. Dates may be DD/MM/YYYY, YYYY-MM-DD or 06-Oct-26.
+        Rows that cannot be read are listed, never silently dropped.
+      </p>
+      <textarea id="paste-text" rows="7" placeholder="02/10/2026&#9;Buy&#9;2&#9;3810&#9;3822&#9;12.00&#10;03/10/2026&#9;Sell&#9;1&#9;3835&#9;3840&#9;6.00"></textarea>
+      <div class="row" style="margin-top:0.7rem">
+        <button id="btn-preview" class="ghost">Preview</button>
+        <button id="btn-commit-paste" class="ghost">Import parsed rows</button>
+      </div>
+      <div id="paste-result"></div>
+    </div>
+
+    <div class="panel">
       <h2>Data</h2>
       <div class="row">
         <button id="btn-export-json" class="ghost">Export JSON</button>
@@ -125,6 +143,8 @@
   </section>
 </main>
 
+<script src="statement.js"></script>
+<script src="risk.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -239,6 +239,7 @@ function escapeHtml(s) {
 function render() {
   const m = metrics(trades);
   renderKpis(m);
+  renderRisk(m);
   renderCurve(m);
   renderGroupTable("by-side", m.bySide, "Side");
   renderGroupTable("by-month", m.byMonth, "Month");
@@ -248,6 +249,67 @@ function render() {
   document.getElementById("data-note").textContent =
     trades.length ? `${trades.length} trades stored in this browser only. Export before clearing site data.` : "No trades yet.";
 }
+
+/* ---------- render: risk ---------- */
+
+function renderRisk(m) {
+  const el = document.getElementById("risk");
+  const r = riskCheck(m.rows);
+  if (r.level === "clear" || !r.messages.length) { el.hidden = true; el.innerHTML = ""; return; }
+
+  el.hidden = false;
+  el.className = "risk " + r.level;
+  el.innerHTML =
+    `<div class="risk-head">${r.level === "stop" ? "Stop for the day" : "Perlu berjaga-jaga"}</div>` +
+    `<ul>${r.messages.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>` +
+    `<div class="risk-stats muted">${r.stats.tradesToday} trade(s) on ${r.stats.day} · ` +
+    `${rm(r.stats.dayNet)} day · ${r.stats.dayR.toFixed(1)}R · ${r.stats.consecutiveLosses} consecutive loss(es)</div>`;
+}
+
+/* ---------- paste-from-statement ---------- */
+
+let pendingParse = null;
+
+function showParse(result, label) {
+  const box = document.getElementById("paste-result");
+  const dupes = label === "commit" ? result.dupes || [] : [];
+  const rows = result.trades
+    .slice(0, 8)
+    .map((t) => `<tr><td>${t.date}</td><td>${t.side}</td><td>${t.lots}</td><td>${t.entry}</td><td>${t.exit}</td><td>${rm(computeTrade(t).net)}</td></tr>`)
+    .join("");
+
+  box.innerHTML =
+    `<p class="muted" style="margin-top:0.8rem">${result.trades.length} row(s) parsed` +
+    (result.trades.length > 8 ? " (first 8 shown)" : "") +
+    `, ${result.skipped.length} skipped` +
+    (dupes.length ? `, ${dupes.length} already present` : "") + `</p>` +
+    (rows
+      ? `<div class="table-wrap"><table class="mini"><tr><th>Date</th><th>Side</th><th>Lots</th><th>Entry</th><th>Exit</th><th>Net</th></tr>${rows}</table></div>`
+      : "") +
+    (result.skipped.length
+      ? `<details style="margin-top:0.6rem"><summary class="muted">${result.skipped.length} skipped row(s)</summary><ul class="muted">` +
+        result.skipped.slice(0, 10).map((s) => `<li>line ${s.line}: ${escapeHtml(s.reason)} — <code>${escapeHtml(s.text.slice(0, 60))}</code></li>`).join("") +
+        `</ul></details>`
+      : "");
+}
+
+document.getElementById("btn-preview").addEventListener("click", () => {
+  const text = document.getElementById("paste-text").value;
+  const parsed = parseStatement(text);
+  const { fresh, dupes } = dropDuplicates(parsed.trades, trades);
+  pendingParse = { fresh, skipped: parsed.skipped };
+  showParse({ trades: fresh, skipped: parsed.skipped, dupes }, "preview");
+});
+
+document.getElementById("btn-commit-paste").addEventListener("click", () => {
+  if (!pendingParse) { document.getElementById("paste-result").innerHTML = `<p class="muted">Preview first — nothing has been imported.</p>`; return; }
+  trades = trades.concat(pendingParse.fresh);
+  save();
+  pendingParse = null;
+  document.getElementById("paste-text").value = "";
+  document.getElementById("paste-result").innerHTML = `<p class="muted">Imported. Check the blotter.</p>`;
+  render();
+});
 
 /* ---------- events ---------- */
 

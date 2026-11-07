@@ -31,13 +31,24 @@ Blotter      every trade, filterable by side / result / note text, deletable
 Journal      tags ranked by net P/L — which behaviour actually costs money
              (VWAP Setup · Stopped out early · Loss Managed · Chased entry · …)
 Import       add a trade by hand, import/export JSON, export CSV, load demo data
+Statement    paste rows copied from a broker statement or CSV export. Header columns
+             matched by name, or positional if there is no header. Handles DD/MM/YYYY,
+             YYYY-MM-DD and 06-Oct-26, thousands separators and "RM" prefixes.
+             Unreadable rows are listed with the reason — never silently dropped —
+             and duplicate fills are detected before anything is written.
+Risk         "Perlu berjaga-jaga": 3+ trades in a day, 2 losses in a row, or -2R on the
+             day. R is measured against your average loss from prior days, not from the
+             day being judged, so a bad day cannot enlarge its own ruler.
 ```
 
 ## What it deliberately is not, yet
 
 ```
-no PDF statement import    the reference app parses Phillip Capital / Webull / CGS statements.
-                           That is the next phase and the hardest part.
+no PDF statement import    the reference app parses Phillip Capital / Webull / CGS PDFs directly,
+                           with a regex set per broker. Yours takes pasted text or CSV, which works
+                           with any broker and cannot silently mis-read a commission column. A
+                           real PDF parser is worth adding once there is a real statement to
+                           build it against.
 no backend                 trades live in localStorage. Export before clearing site data.
 no multi-account           one account. The reference gates this behind a paid tier.
 no auth                    one user. Nothing to protect but your own numbers.
@@ -50,9 +61,14 @@ hand-computed values — contract multiplier, short-side sign, SST applied to co
 P/L, profit factor, streaks, and drawdown measured from the running peak.
 
 ```
-docker run --rm -v "$PWD":/app -w /app node:16-alpine node test-math.js
-→ 17 passed, 0 failed
+docker run --rm -v "$PWD":/app -w /app node:16-alpine node test-math.js   → 17 passed
+docker run --rm -v "$PWD":/app -w /app node:16-alpine node test-parse.js  → 28 passed
 ```
+
+Two of these tests failed on first run and both times the implementation was right and the
+expectation was wrong — a 2-lot figure checked against a 1-lot input, and an assertion written with
+the sign flipped. The third failure was real: R was being measured against an average that included
+the losing day, which stopped the -2R limit from ever firing. That one changed the code.
 
 ## Roadmap
 
