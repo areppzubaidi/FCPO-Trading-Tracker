@@ -76,10 +76,31 @@ function liveTrades() {
 function computeTrade(t) {
   const dir = t.side === "short" ? -1 : 1;
   const gross = (Number(t.exit) - Number(t.entry)) * Number(t.lots) * POINT_VALUE * dir;
-  const commission = Number(t.commission || 0);
-  const sst = commission * SST_RATE;
+
+  // A blank commission means "work it out from the rate card" (fees.js). A typed number always wins,
+  // so every trade already in the file keeps the cost it was recorded with — this changes what new
+  // trades do, not what history says.
+  let commission;
+  let sst;
+  let feeBreakdown = "";
+  const typed = t.commission;
+  if (typed === "" || typed === null || typed === undefined) {
+    const f = typeof computeFees === "function" ? computeFees(feeProfileKey(), t) : null;
+    if (f) {
+      commission = f.brokerage + f.clearing + f.exchange + f.stamp;
+      sst = f.sst;
+      feeBreakdown = f.breakdown;
+    } else {
+      commission = 0;
+      sst = 0;
+    }
+  } else {
+    commission = Number(typed || 0);
+    sst = commission * SST_RATE;
+  }
+
   const net = gross - commission - sst;
-  return { ...t, gross, commission, sst, net };
+  return { ...t, gross, commission, sst, net, feeBreakdown };
 }
 
 function metrics(list) {
@@ -322,6 +343,10 @@ function render() {
   renderGroupTable("by-side", m.bySide, "Side");
   renderGroupTable("by-month", m.byMonth, "Month");
   renderDiscipline(m);
+  // Optional modules: app.js must still run when fees.js or calendar.js is absent (the maths tests
+  // load this file alone), so the calls are guarded rather than assumed.
+  if (typeof renderCalendar === "function") renderCalendar();
+  if (typeof renderFeePanel === "function") renderFeePanel();
   renderBlotter(m);
   renderJournal(m);
   renderSetups();
@@ -413,7 +438,8 @@ document.getElementById("trade-form").addEventListener("submit", (e) => {
     lots: Number(f.get("lots")),
     entry: Number(f.get("entry")),
     exit: Number(f.get("exit")),
-    commission: Number(f.get("commission") || 0),
+    // Blank means "use the rate card" — Number("") would be 0, which silently claims a free trade.
+    commission: (f.get("commission") || "").trim() === "" ? "" : Number(f.get("commission")),
     tag: (f.get("tag") || "").trim(),
     note: (f.get("note") || "").trim(),
   });
@@ -581,3 +607,11 @@ document.getElementById("setup-table").addEventListener("click", (e) => {
 })();
 
 render();
+
+
+/* ---------- calendar month navigation ---------- */
+
+const calPrev = document.getElementById("cal-prev");
+const calNext = document.getElementById("cal-next");
+if (calPrev) calPrev.addEventListener("click", () => shiftCalendar(-1));
+if (calNext) calNext.addEventListener("click", () => shiftCalendar(1));

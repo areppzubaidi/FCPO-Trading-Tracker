@@ -1,0 +1,14 @@
+{
+  "name": "FCPO Trading Journal",
+  "short_name": "FCPO Journal",
+  "description": "A statement-powered FCPO futures trading journal: blotter, setups, brokerage accounting, growth curve and a daily P/L calendar.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

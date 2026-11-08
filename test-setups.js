@@ -1,7 +1,7 @@
 /* Tests for setups.js — the parts that decide whether a plan was any good.
  * Pure functions, no DOM, so these run in node directly. */
 const assert = require("assert");
-const S = require("/app/setups.js");
+const S = require(__dirname + "/setups.js");
 
 let pass = 0;
 const fails = [];

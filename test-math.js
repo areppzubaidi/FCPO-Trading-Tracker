@@ -21,12 +21,12 @@ global.Blob = class {};
 // app.js now calls parseStatement/riskCheck at render time, so those modules have to exist in the
 // same context first. Function declarations in a classic script land on the global object, which is
 // exactly how the browser loads these three files.
-vm.runInThisContext(fs.readFileSync("/app/statement.js", "utf8"));
-vm.runInThisContext(fs.readFileSync("/app/risk.js", "utf8"));
+vm.runInThisContext(fs.readFileSync(__dirname + "/statement.js", "utf8"));
+vm.runInThisContext(fs.readFileSync(__dirname + "/risk.js", "utf8"));
 // sets up the setup model too: app.js renders the setups view on every render()
-vm.runInThisContext(fs.readFileSync("/app/setups.js", "utf8"));
+vm.runInThisContext(fs.readFileSync(__dirname + "/setups.js", "utf8"));
 
-let src = fs.readFileSync("/app/app.js", "utf8");
+let src = fs.readFileSync(__dirname + "/app.js", "utf8");
 src += "\nglobalThis.__t = { computeTrade, metrics, demo };";
 vm.runInThisContext(src);
 
