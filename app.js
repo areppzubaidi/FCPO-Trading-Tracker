@@ -30,6 +30,7 @@ const TAGS = [
 
 let trades = load();
 let filters = { side: "", result: "", q: "" };
+let setups = loadSetups();
 
 function load() {
   try {
@@ -43,6 +44,31 @@ function load() {
 
 function save() {
   localStorage.setItem(STORE_KEY, JSON.stringify(trades));
+}
+
+/* ---------- setups: storage ----------
+ *
+ * Separate key from trades on purpose. A setup is a plan and a trade is an execution; merging them
+ * would make every existing export ambiguous.
+ */
+
+function loadSetups() {
+  try {
+    const raw = localStorage.getItem("fcpo.setups.v1");
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error("could not read saved setups", e);
+    return [];
+  }
+}
+
+function saveSetups() {
+  localStorage.setItem("fcpo.setups.v1", JSON.stringify(setups));
+}
+
+/** Trades that still count. Archived rows stay in the file and in the export, but not in the maths. */
+function liveTrades() {
+  return trades.filter((t) => !t.archived);
 }
 
 /* ---------- money ---------- */
@@ -236,8 +262,60 @@ function escapeHtml(s) {
 
 /* ---------- render all ---------- */
 
+/* ---------- render: setups ---------- */
+
+function renderSetups() {
+  const live = setups.filter((s) => !s.archived);
+  const st = setupStats(setups);
+
+  document.getElementById("setup-stats").innerHTML = [
+    ["planned", st.planned, "ideas written down"],
+    ["triggered", `${Math.round(st.triggerRate * 100)}%`, `${st.triggered} of ${st.planned} came to you`],
+    ["TP1 hit", `${Math.round(st.tp1HitRate * 100)}%`, "of closed setups"],
+    ["avg R", st.avgR ? st.avgR.toFixed(2) : "—", "per closed setup"],
+    ["total R", st.totalR ? st.totalR.toFixed(1) : "—", "sum of results"],
+  ].map(([label, value, sub]) => `<div class="kpi"><div class="kpi-label">${label}</div>
+      <div class="kpi-value">${value}</div><div class="kpi-sub">${sub}</div></div>`).join("");
+
+  const el = document.getElementById("setup-table");
+  if (!live.length) {
+    el.innerHTML = `<tr><td class="muted">No setups yet. Write down the next one before you take it.</td></tr>`;
+  } else {
+    el.innerHTML =
+      `<tr><th>Date</th><th>Instrument</th><th>Dir</th><th>Entry</th><th>Stop</th><th>TP1</th><th>R:R</th><th>Risk</th><th>Status</th><th>Result</th><th></th></tr>` +
+      live.slice().reverse().map((s) => {
+        const r1 = rr(s, s.tp1);
+        const or = outcomeR(s);
+        const status = s.status === "closed"
+          ? `<span class="tag">closed</span>`
+          : s.status === "triggered" ? `<span class="tag">triggered</span>` : `<span class="muted">planned</span>`;
+        const result = or === null ? `<span class="muted">—</span>`
+          : `<span class="${or >= 0 ? "good" : "bad"}">${or.toFixed(2)}R${reachedTp(s) ? ` · TP${reachedTp(s)}` : ""}</span>`;
+        return `<tr>
+        <td>${s.created}</td>
+        <td>${s.instrument}</td>
+        <td><span class="side ${s.direction}">${s.direction[0].toUpperCase()}</span></td>
+        <td>${s.entry}</td>
+        <td>${s.stop}</td>
+        <td>${s.tp1}</td>
+        <td class="muted">${r1 === null ? "—" : r1.toFixed(1) + "R"}</td>
+        <td class="muted">${s.risk}</td>
+        <td>${status}</td>
+        <td>${result}</td>
+        <td class="nowrap">
+          ${s.status === "planned" ? `<button class="ghost tiny" data-act="trigger" data-id="${s.id}">Trigger</button>` : ""}
+          ${s.status !== "closed" ? `<button class="ghost tiny" data-act="close" data-id="${s.id}">Close</button>` : ""}
+          <button class="del" data-act="archive" data-id="${s.id}" title="Archive (keeps the row)">×</button>
+        </td></tr>`;
+      }).join("");
+  }
+  const archived = setups.length - live.length;
+  document.getElementById("setup-count").textContent =
+    `${live.length} setup${live.length === 1 ? "" : "s"} shown${archived ? ` · ${archived} archived` : ""}`;
+}
+
 function render() {
-  const m = metrics(trades);
+  const m = metrics(liveTrades());
   renderKpis(m);
   renderRisk(m);
   renderCurve(m);
@@ -246,8 +324,11 @@ function render() {
   renderDiscipline(m);
   renderBlotter(m);
   renderJournal(m);
+  renderSetups();
   document.getElementById("data-note").textContent =
-    trades.length ? `${trades.length} trades stored in this browser only. Export before clearing site data.` : "No trades yet.";
+    liveTrades().length
+      ? `${liveTrades().length} trades stored in this browser only${trades.length > liveTrades().length ? ` (+${trades.length - liveTrades().length} archived)` : ""}. Export before clearing site data.`
+      : "No trades yet.";
 }
 
 /* ---------- render: risk ---------- */
@@ -344,7 +425,14 @@ document.getElementById("trade-form").addEventListener("submit", (e) => {
 document.getElementById("blotter").addEventListener("click", (e) => {
   const btn = e.target.closest(".del");
   if (!btn) return;
-  trades = trades.filter((t) => t.id !== btn.dataset.id);
+  // ARCHIVE, NOT DELETE.
+  // A blotter that can quietly lose a losing trade is a blotter you cannot trust, and the moment you
+  // most want to delete a row is the moment it is most informative. The row stops counting toward
+  // the metrics; it never stops existing.
+  const t = trades.find((x) => x.id === btn.dataset.id);
+  if (!t) return;
+  if (!confirm(`Archive this trade instead of deleting it?\n\n${t.date} · ${t.side} · net ${t.exit}\n\nArchived trades stop counting but stay in your data and in the export.`)) return;
+  t.archived = true;
   save();
   render();
 });
@@ -352,7 +440,7 @@ document.getElementById("blotter").addEventListener("click", (e) => {
 ["f-side", "f-result", "f-q"].forEach((id) => {
   document.getElementById(id).addEventListener("input", (e) => {
     filters[id === "f-side" ? "side" : id === "f-result" ? "result" : "q"] = e.target.value;
-    renderBlotter(metrics(trades));
+    renderBlotter(metrics(liveTrades()));
   });
 });
 
@@ -420,5 +508,76 @@ function demo() {
     id: "demo" + i, date, side, contract: "FCPO", lots, entry, exit, commission, tag, note,
   }));
 }
+
+/* ---------- setups: form + actions ---------- */
+
+document.getElementById("setup-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const s = newSetup({
+    created: f.get("created") || new Date().toISOString().slice(0, 10),
+    instrument: f.get("instrument"),
+    direction: f.get("direction"),
+    risk: f.get("risk"),
+    entry: f.get("entry"),
+    stop: f.get("stop"),
+    tp1: f.get("tp1"),
+    tp2: f.get("tp2"),
+    tp3: f.get("tp3"),
+    note: f.get("note"),
+  });
+
+  // A stop on the wrong side of entry makes every result meaningless, so it is refused here
+  // rather than discovered during a monthly review.
+  const problems = validateSetup(s);
+  const err = document.getElementById("setup-error");
+  if (problems.length) {
+    err.hidden = false;
+    err.className = "risk stop";
+    err.innerHTML = `<div class="risk-head">This setup does not make sense yet</div><ul>${
+      problems.map((p) => `<li>${escapeHtml(p)}</li>`).join("")}</ul>`;
+    return;
+  }
+  err.hidden = true;
+
+  setups.push(s);
+  saveSetups();
+  e.target.reset();
+  e.target.instrument.value = "FCPO";
+  e.target.created.value = new Date().toISOString().slice(0, 10);
+  render();
+});
+
+document.getElementById("setup-table").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-act]");
+  if (!btn) return;
+  const s = setups.find((x) => x.id === btn.dataset.id);
+  if (!s) return;
+
+  if (btn.dataset.act === "trigger") {
+    s.status = "triggered";
+  } else if (btn.dataset.act === "close") {
+    const answer = prompt(`Where did this ${s.instrument} ${s.direction} close?\n\nEntry ${s.entry} · stop ${s.stop}`, "");
+    if (answer === null || answer.trim() === "") return;
+    const price = Number(answer);
+    if (!Number.isFinite(price)) {
+      alert("That is not a price.");
+      return;
+    }
+    s.status = "closed";
+    s.outcome = price;
+  } else if (btn.dataset.act === "archive") {
+    if (!confirm("Archive this setup? It stops counting but stays in your data.")) return;
+    s.archived = true;
+  }
+  saveSetups();
+  render();
+});
+
+// set a sensible date on first load
+(function () {
+  const d = document.querySelector('#setup-form input[name="created"]');
+  if (d && !d.value) d.value = new Date().toISOString().slice(0, 10);
+})();
 
 render();

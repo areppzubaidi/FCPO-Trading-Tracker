@@ -16,6 +16,7 @@
   <nav class="tabs" id="tabs">
     <button class="tab active" data-view="dashboard">Dashboard</button>
     <button class="tab" data-view="blotter">Blotter</button>
+    <button class="tab" data-view="setups">Setups</button>
     <button class="tab" data-view="journal">Journal</button>
     <button class="tab" data-view="import">Import</button>
   </nav>
@@ -76,6 +77,48 @@
         <table class="blotter" id="blotter"></table>
       </div>
       <p class="muted" id="blotter-count"></p>
+    </div>
+  </section>
+
+  <!-- SETUPS: the plan, before it becomes a trade -->
+  <section id="view-setups" class="view">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Setups</h2>
+        <span class="muted">A plan you wrote down beats a trade you remember.</span>
+      </div>
+      <div id="setup-stats" class="kpis"></div>
+      <div class="table-wrap">
+        <table class="blotter" id="setup-table"></table>
+      </div>
+      <p class="muted" id="setup-count"></p>
+    </div>
+
+    <div class="panel">
+      <h2>Plan a setup</h2>
+      <p class="muted">
+        Entry, stop and three targets — the shape a signal arrives in. The stop defines the risk, so
+        every result is recorded in R rather than ringgit, and the same setup is comparable across
+        instruments. Nothing is ever deleted here; a wrong plan is archived, not erased.
+      </p>
+      <form id="setup-form" class="form">
+        <label>Date <input type="date" name="created" required /></label>
+        <label>Instrument <input name="instrument" value="FCPO" required /></label>
+        <label>Direction
+          <select name="direction"><option value="long">Long</option><option value="short">Short</option></select>
+        </label>
+        <label>Risk grade
+          <select name="risk"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select>
+        </label>
+        <label>Entry <input name="entry" type="number" step="0.5" required /></label>
+        <label>Stop <input name="stop" type="number" step="0.5" required /></label>
+        <label>TP1 <input name="tp1" type="number" step="0.5" required /></label>
+        <label>TP2 <input name="tp2" type="number" step="0.5" /></label>
+        <label>TP3 <input name="tp3" type="number" step="0.5" /></label>
+        <label class="wide">Why <input name="note" placeholder="The zone, the confluence, the invalidation" /></label>
+        <button type="submit">Add setup</button>
+      </form>
+      <div id="setup-error" class="risk" hidden></div>
     </div>
   </section>
 
@@ -143,6 +186,7 @@
   </section>
 </main>
 
+<script src="setups.js"></script>
 <script src="statement.js"></script>
 <script src="risk.js"></script>
 <script src="app.js"></script>

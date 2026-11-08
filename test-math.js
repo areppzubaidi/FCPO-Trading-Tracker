@@ -23,6 +23,8 @@ global.Blob = class {};
 // exactly how the browser loads these three files.
 vm.runInThisContext(fs.readFileSync("/app/statement.js", "utf8"));
 vm.runInThisContext(fs.readFileSync("/app/risk.js", "utf8"));
+// sets up the setup model too: app.js renders the setups view on every render()
+vm.runInThisContext(fs.readFileSync("/app/setups.js", "utf8"));
 
 let src = fs.readFileSync("/app/app.js", "utf8");
 src += "\nglobalThis.__t = { computeTrade, metrics, demo };";
